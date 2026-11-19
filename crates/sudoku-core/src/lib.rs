@@ -3,14 +3,21 @@
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]
 
 pub mod error;
+pub mod generator;
 pub mod model;
 pub mod scoring;
+pub mod solver;
 
 pub use error::DomainError;
+pub use generator::{generate_daily_puzzle, generate_standard_puzzle};
 pub use model::{
     CellIndex, DailyDate, Difficulty, Digit, GameKind, GameStatus, NotesMask, Puzzle, Weekday,
 };
 pub use scoring::{compute_score_breakdown, compute_time_bonus, ScoreBreakdown};
+pub use solver::{
+    compute_smart_hint, generate_complete_grid, grade_puzzle, solve_unique, HintSuggestion,
+    SolutionCount, SolvingTechnique,
+};
 
 /// Returns the crate version string for diagnostics.
 pub const fn core_version() -> &'static str {
