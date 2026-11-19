@@ -3,7 +3,7 @@
  * Adds 0 KB of bundled media assets.
  */
 
-export type SoundCue = 'place' | 'note' | 'mistake' | 'hint' | 'victory';
+export type SoundCue = 'place' | 'note' | 'mistake' | 'hint' | 'digitComplete' | 'victory';
 
 let audioContext: AudioContext | null = null;
 
@@ -73,6 +73,10 @@ export function playSoundCue(cue: SoundCue, muted: boolean): void {
     case 'hint':
       playTone(ctx, 660, 0.09, 0.045, 'sine', 0);
       playTone(ctx, 880, 0.12, 0.045, 'sine', 0.07);
+      break;
+    case 'digitComplete':
+      playTone(ctx, 783.99, 0.09, 0.045, 'sine', 0);
+      playTone(ctx, 1046.5, 0.15, 0.05, 'sine', 0.065);
       break;
     case 'victory':
       playTone(ctx, 523.25, 0.16, 0.06, 'sine', 0);

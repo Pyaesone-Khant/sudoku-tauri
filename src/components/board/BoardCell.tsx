@@ -8,6 +8,7 @@ interface BoardCellProps {
   isSameDigit: boolean;
   isHintTarget: boolean;
   isHintHighlight: boolean;
+  isCelebrating: boolean;
   isObscured: boolean;
   onSelect: (index: number) => void;
 }
@@ -24,6 +25,7 @@ export const BoardCell = memo(function BoardCell({
   isSameDigit,
   isHintTarget,
   isHintHighlight,
+  isCelebrating,
   isObscured,
   onSelect,
 }: BoardCellProps) {
@@ -63,10 +65,13 @@ export const BoardCell = memo(function BoardCell({
     inkClass = 'text-[var(--ink-success)] font-medium';
   }
 
+  const celebrationDelayMs = isCelebrating ? (row + col) * 22 : 0;
+
   return (
     <button
       type="button"
       onClick={() => onSelect(cell.index)}
+      style={isCelebrating ? { animationDelay: `${celebrationDelayMs}ms` } : undefined}
       aria-label={`Row ${row + 1}, Column ${col + 1}${
         isObscured
           ? ', hidden while paused'
@@ -75,7 +80,9 @@ export const BoardCell = memo(function BoardCell({
             : ', empty'
       }`}
       aria-pressed={isSelected}
-      className={`relative flex aspect-square items-center justify-center p-0.5 transition-colors duration-75 focus:outline-none ${borderClasses} ${bgClass}`}
+      className={`relative flex aspect-square items-center justify-center p-0.5 transition-colors duration-75 focus:outline-none ${borderClasses} ${bgClass} ${
+        isCelebrating ? 'animate-cell-complete z-10' : ''
+      }`}
     >
       {isObscured ? null : cell.value !== null ? (
         <span className={`tabular-nums text-[clamp(18px,3.2vh,25px)] leading-none ${inkClass}`}>

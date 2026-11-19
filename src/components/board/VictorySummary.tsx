@@ -1,5 +1,6 @@
 import { Award, Calendar, Plus } from 'lucide-react';
 import { formatDisplayDate, formatSolveTime, type GameSnapshot } from '../../api/types';
+import { ConfettiCanvas } from './ConfettiCanvas';
 
 interface VictorySummaryProps {
   game: GameSnapshot;
@@ -25,13 +26,15 @@ export function VictorySummary({
       : `Standard Game · ${game.difficulty}`;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Puzzle completed"
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/35 p-4 backdrop-blur-xs"
-    >
-      <div className="w-full max-w-sm rounded-2xl border border-[var(--border-hairline)] bg-[var(--surface-elevated)] p-6 shadow-xl">
+    <>
+      <ConfettiCanvas active burstKey={game.id} />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Puzzle completed"
+        className="fixed inset-0 z-40 flex items-center justify-center bg-black/35 p-4 backdrop-blur-xs"
+      >
+        <div className="animate-victory-enter w-full max-w-sm rounded-2xl border border-[var(--border-hairline)] bg-[var(--surface-elevated)] p-6 shadow-xl">
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-[20px] font-semibold tracking-tight text-[var(--ink-primary)]">
@@ -107,7 +110,8 @@ export function VictorySummary({
             Daily Calendar
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

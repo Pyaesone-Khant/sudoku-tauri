@@ -32,6 +32,8 @@ export interface GameStateSlice {
   displaySolveTimeSecs: number;
   activeTab: AppTab;
   errorMessage: string | null;
+  /** Digit (`1..=9`) that just reached all 9 placements, for brief completion celebration. */
+  celebratingDigit: number | null;
 }
 
 /** Mutating actions exposed by `GameProvider`. */
@@ -93,17 +95,58 @@ export function GameProvider({ client = tauriSudokuClient, children }: GameProvi
   const [isBusy, setIsBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pendingElapsedSecs, setPendingElapsedSecs] = useState(0);
+  const [celebratingDigit, setCelebratingDigit] = useState<number | null>(null);
 
   const pendingElapsedRef = useRef(0);
   pendingElapsedRef.current = pendingElapsedSecs;
+  const prevGameRef = useRef<GameSnapshot | null>(null);
+  const celebrateTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (celebrateTimerRef.current !== null) {
+        window.clearTimeout(celebrateTimerRef.current);
+      }
+    };
+  }, []);
 
   const applySnapshot = useCallback((snapshot: AppStateSnapshot) => {
+    const prevGame = prevGameRef.current;
+    const nextGame = snapshot.current_game;
+    prevGameRef.current = nextGame;
+
     setAppState(snapshot);
     setPendingElapsedSecs(0);
     pendingElapsedRef.current = 0;
 
+    // Detect if any digit 1..=9 just crossed from <9 to 9 in the same Game.
+    let newlyCompletedDigit: number | null = null;
+    if (prevGame && nextGame && prevGame.id === nextGame.id) {
+      for (let i = 0; i < 9; i += 1) {
+        const before = prevGame.correct_digit_counts[i] ?? 0;
+        const after = nextGame.correct_digit_counts[i] ?? 0;
+        if (before < 9 && after === 9) {
+          newlyCompletedDigit = i + 1;
+          break;
+        }
+      }
+    }
+
+    if (newlyCompletedDigit !== null) {
+      setCelebratingDigit(newlyCompletedDigit);
+      if (celebrateTimerRef.current !== null) {
+        window.clearTimeout(celebrateTimerRef.current);
+      }
+      celebrateTimerRef.current = window.setTimeout(() => {
+        setCelebratingDigit(null);
+        celebrateTimerRef.current = null;
+      }, 900);
+    }
+
     if (snapshot.last_move_outcome === 'Completed') {
       playSoundCue('victory', mutedRef.current);
+    } else if (newlyCompletedDigit !== null) {
+      playSoundCue('digitComplete', mutedRef.current);
     } else if (snapshot.last_move_outcome === 'Mistake') {
       playSoundCue('mistake', mutedRef.current);
     } else if (snapshot.last_move_outcome === 'Correct') {
@@ -135,6 +178,7 @@ export function GameProvider({ client = tauriSudokuClient, children }: GameProvi
       try {
         const snapshot = await client.getAppState();
         if (active) {
+          prevGameRef.current = snapshot.current_game;
           setAppState(snapshot);
           setIsLoading(false);
         }
@@ -365,6 +409,7 @@ export function GameProvider({ client = tauriSudokuClient, children }: GameProvi
         displaySolveTimeSecs,
         activeTab,
         errorMessage,
+        celebratingDigit,
       },
       actions: {
         setActiveTab,
@@ -395,6 +440,7 @@ export function GameProvider({ client = tauriSudokuClient, children }: GameProvi
       activeTab,
       appState,
       applyHint,
+      celebratingDigit,
       clearError,
       dismissHint,
       displaySolveTimeSecs,

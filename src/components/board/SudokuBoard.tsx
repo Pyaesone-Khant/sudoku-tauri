@@ -8,7 +8,7 @@ import { BoardCell } from './BoardCell';
  */
 export function SudokuBoard() {
   const { state, actions } = useGame();
-  const { game, selectedCell } = state;
+  const { game, selectedCell, celebratingDigit } = state;
 
   const hintHighlightSet = useMemo(() => {
     const set = new Set<number>();
@@ -64,6 +64,12 @@ export function SudokuBoard() {
               isSameDigit={isSameDigit}
               isHintTarget={cell.index === hintTargetCell}
               isHintHighlight={hintHighlightSet.has(cell.index)}
+              isCelebrating={
+                !isPaused &&
+                celebratingDigit !== null &&
+                !cell.is_mistake &&
+                cell.value === celebratingDigit
+              }
               isObscured={isPaused}
               onSelect={actions.selectCell}
             />

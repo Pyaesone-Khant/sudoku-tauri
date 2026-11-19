@@ -65,11 +65,16 @@ function createMockClient(initial: AppStateSnapshot): SudokuClient {
         c.index === cell ? { ...c, value: digit, is_mistake: digit === 9 } : c,
       );
       const isMistake = digit === 9;
+      const counts = [...(current.current_game?.correct_digit_counts ?? [0, 0, 0, 0, 1, 0, 0, 0, 0])];
+      if (!isMistake && digit >= 1 && digit <= 9) {
+        counts[digit - 1] = Math.min(9, (counts[digit - 1] ?? 0) + 1);
+      }
       current = {
         ...current,
         current_game: buildGame({
           ...current.current_game,
           cells,
+          correct_digit_counts: counts,
           mistakes: (current.current_game?.mistakes ?? 0) + (isMistake ? 1 : 0),
           can_undo: true,
           score: {
@@ -301,6 +306,7 @@ describe('Sudoku Play View', () => {
 
     render(<App client={client} />);
     const dialog = await screen.findByRole('dialog', { name: 'Puzzle completed' });
+    expect(screen.getByTestId('victory-confetti')).toBeInTheDocument();
     expect(within(dialog).getByText('Flawless Solve')).toBeInTheDocument();
     expect(within(dialog).getByText('2,500')).toBeInTheDocument();
     expect(within(dialog).getByText('+2,000')).toBeInTheDocument();
@@ -371,5 +377,32 @@ describe('Sudoku Play View', () => {
     await user.click(screen.getByRole('tab', { name: 'Hard' }));
     expect(screen.getAllByText('4,100').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Daily · Nov 19, 2026/)).toBeInTheDocument();
+  });
+
+  it('triggers micro-confetti on the NumberPad when a digit completes all 9 placements', async () => {
+    const user = userEvent.setup();
+    const client = createMockClient({
+      active_slot: 'Standard',
+      current_game: buildGame({
+        // Digit 3 has 8 placed; digit 5 already has 9 placed (must not misfire on load).
+        correct_digit_counts: [0, 0, 8, 0, 9, 0, 0, 0, 0],
+      }),
+      has_in_progress_standard: true,
+      in_progress_daily_date: null,
+      today: { year: 2026, month: 11, day: 19 },
+      last_move_outcome: null,
+    });
+
+    render(<App client={client} />);
+    await screen.findByRole('grid', { name: 'Sudoku board' });
+
+    expect(screen.queryByTestId('digit-confetti-5')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('digit-confetti-3')).not.toBeInTheDocument();
+
+    // Place the 9th copy of digit 3 -> triggers micro-confetti for digit 3.
+    await user.click(screen.getByRole('button', { name: /Row 1, Column 2, empty/i }));
+    await user.keyboard('3');
+
+    expect(await screen.findByTestId('digit-confetti-3')).toBeInTheDocument();
   });
 });
