@@ -152,17 +152,73 @@ function createMockClient(initial: AppStateSnapshot): SudokuClient {
       year: 2026,
       month: 11,
       today: { year: 2026, month: 11, day: 19 },
-      daily_streak_current: 0,
-      daily_streak_best: 0,
-      days: [],
+      daily_streak_current: 3,
+      daily_streak_best: 5,
+      days: [
+        {
+          date: { year: 2026, month: 11, day: 18 },
+          difficulty: 'Medium' as const,
+          state: { status: 'Playable' as const },
+        },
+        {
+          date: { year: 2026, month: 11, day: 19 },
+          difficulty: 'Hard' as const,
+          state: { status: 'Playable' as const },
+        },
+        {
+          date: { year: 2026, month: 11, day: 20 },
+          difficulty: 'Hard' as const,
+          state: { status: 'FutureLocked' as const },
+        },
+      ],
     })),
     getStats: vi.fn(async () => ({
-      by_difficulty: [],
-      win_streak_current: 0,
-      win_streak_best: 0,
-      daily_streak_current: 0,
-      daily_streak_best: 0,
-      recent_history: [],
+      by_difficulty: [
+        {
+          difficulty: 'Easy' as const,
+          games_completed: 4,
+          games_abandoned: 1,
+          best_score: 2600,
+          avg_score: 2300,
+          best_time_secs: 120,
+          avg_time_secs: 180,
+          flawless_solves: 2,
+        },
+        {
+          difficulty: 'Hard' as const,
+          games_completed: 1,
+          games_abandoned: 0,
+          best_score: 4100,
+          avg_score: 4100,
+          best_time_secs: 420,
+          avg_time_secs: 420,
+          flawless_solves: 1,
+        },
+      ],
+      win_streak_current: 2,
+      win_streak_best: 4,
+      daily_streak_current: 3,
+      daily_streak_best: 5,
+      recent_history: [
+        {
+          id: 9,
+          kind: { type: 'Daily' as const, date: { year: 2026, month: 11, day: 19 } },
+          difficulty: 'Hard' as const,
+          solve_time_secs: 420,
+          mistakes: 0,
+          hints_used: 0,
+          score: {
+            earned_score: 3000,
+            time_bonus: 1100,
+            mistake_penalty: 0,
+            hint_penalty: 0,
+            total_penalty: 0,
+            final_score: 4100,
+          },
+          flawless: true,
+          completed_on: { year: 2026, month: 11, day: 19 },
+        },
+      ],
     })),
     onAutoPaused: vi.fn(async () => () => {}),
   };
@@ -272,5 +328,48 @@ describe('Sudoku Play View', () => {
     await waitFor(() => {
       expect(client.applyHint).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('opens a past catch-up date from the Daily Challenge Calendar and locks future dates', async () => {
+    const user = userEvent.setup();
+    const client = createMockClient({
+      active_slot: 'Standard',
+      current_game: null,
+      has_in_progress_standard: false,
+      in_progress_daily_date: null,
+      today: { year: 2026, month: 11, day: 19 },
+      last_move_outcome: null,
+    });
+
+    render(<App client={client} />);
+    await user.click(screen.getByRole('button', { name: 'Daily' }));
+
+    // Select past date Nov 18 and click Play Daily Challenge
+    await user.click(await screen.findByRole('button', { name: /Nov 18, 2026/i }));
+    await user.click(screen.getByRole('button', { name: 'Play Daily Challenge' }));
+    expect(client.openDailyChallenge).toHaveBeenCalledWith('2026-11-18');
+  });
+
+  it('switches Difficulty tabs on the Stats view and displays Win Streak, Daily Streak, and Recent History', async () => {
+    const user = userEvent.setup();
+    const client = createMockClient({
+      active_slot: 'Standard',
+      current_game: null,
+      has_in_progress_standard: false,
+      in_progress_daily_date: null,
+      today: { year: 2026, month: 11, day: 19 },
+      last_move_outcome: null,
+    });
+
+    render(<App client={client} />);
+    await user.click(screen.getByRole('button', { name: 'Stats' }));
+
+    expect(await screen.findByText('Win Streak')).toBeInTheDocument();
+    expect(screen.getByText('Daily Streak')).toBeInTheDocument();
+    expect(screen.getByText('2,600')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: 'Hard' }));
+    expect(screen.getAllByText('4,100').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Daily · Nov 19, 2026/)).toBeInTheDocument();
   });
 });

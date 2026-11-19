@@ -1,6 +1,8 @@
 import type { SudokuClient } from './api/sudokuClient';
 import { PlayView } from './components/board/PlayView';
+import { DailyCalendarView } from './components/daily/DailyCalendarView';
 import { TitleBar } from './components/layout/TitleBar';
+import { StatsView } from './components/stats/StatsView';
 import { GameProvider, useGame } from './context/GameProvider';
 import { PreferencesProvider } from './context/PreferencesProvider';
 
@@ -31,13 +33,9 @@ function AppShell() {
         {state.activeTab === 'play' ? (
           <PlayView />
         ) : state.activeTab === 'daily' ? (
-          <div className="flex flex-1 items-center justify-center text-[13px] text-[var(--ink-secondary)]">
-            Daily Challenge Calendar
-          </div>
+          <DailyCalendarView />
         ) : (
-          <div className="flex flex-1 items-center justify-center text-[13px] text-[var(--ink-secondary)]">
-            Statistics
-          </div>
+          <StatsView />
         )}
       </main>
     </div>
