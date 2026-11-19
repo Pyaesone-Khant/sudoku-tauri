@@ -1,0 +1,16 @@
+# Rust / Cargo
+/target
+/crates/*/target
+/src-tauri/target
+/src-tauri/gen
+
+# Node / pnpm
+/node_modules
+/dist
+*.tsbuildinfo
+
+# macOS / Editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
